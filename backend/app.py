@@ -7,12 +7,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-try:
-    from db import init_db
-    from routes.api import router as api_router
-except ImportError:
-    from backend.db import init_db
-    from backend.routes.api import router as api_router
+from backend.core.config import FRONTEND_DIR
+from backend.core.db import init_db
+from backend.routes.api import router as api_router
 
 _BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _FRONTEND_DIR = os.path.join(_BASE_DIR, "frontend")

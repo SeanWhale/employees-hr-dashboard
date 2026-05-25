@@ -15,19 +15,12 @@ from sklearn.pipeline import Pipeline
 from scipy.spatial.distance import cosine, euclidean
 from scipy.stats import pearsonr
 
-_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-_PARENT_DIR = os.path.dirname(_CURRENT_DIR)
-if _PARENT_DIR not in sys.path:
-    sys.path.insert(0, _PARENT_DIR)
+from backend.core.db import get_connection, get_parquet_path
+from backend.core.config import DATASET_MAX_DATE
 
-try:
-    import db
-except ImportError:
-    from backend import db
-
-get_connection = db.get_connection
-get_parquet_path = db.get_parquet_path
-DATASET_MAX_DATE = db.DATASET_MAX_DATE
+get_connection = get_connection
+get_parquet_path = get_parquet_path
+DATASET_MAX_DATE = DATASET_MAX_DATE
 
 
 # ============================================================

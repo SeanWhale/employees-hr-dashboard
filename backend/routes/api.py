@@ -1,10 +1,10 @@
 # File: backend/routes/api.py
 """API 路由 — 17 个端点覆盖所有分析维度"""
 from fastapi import APIRouter
-try:
-    from services import analytics as A
-except ImportError:
-    from backend.services import analytics as A
+from fastapi import APIRouter
+
+# 强制使用绝对路径
+from backend.services import analytics as A
 
 router = APIRouter(prefix="/api")
 
