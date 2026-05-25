@@ -1,25 +1,19 @@
 # File: backend/app.py
-"""Enterprise HR Insights 360 — FastAPI Backend v2.0"""
-import os
 from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.core.config import FRONTEND_DIR
 from backend.core.db import init_db
-from backend.routes.api import router as api_router
 
-_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_FRONTEND_DIR = os.path.join(_BASE_DIR, "frontend")
-
+# 👇 换成导入我们刚才新建的 v1 router
+from backend.api.v1.router import router as v1_router
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     init_db()
     yield
-
 
 app = FastAPI(title="HR Insights 360 API", version="2.0", lifespan=lifespan)
 
@@ -31,9 +25,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/frontend", StaticFiles(directory=_FRONTEND_DIR), name="frontend")
-app.include_router(api_router)
+app.mount("/frontend", StaticFiles(directory=str(FRONTEND_DIR)), name="frontend")
 
+# 👇 挂载新的路由
+app.include_router(v1_router, prefix="/api")
 
 @app.get("/")
 def root():
