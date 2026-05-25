@@ -196,8 +196,35 @@ def get_title_sankey():
     if df.empty:
         return {"nodes": [], "links": []}
 
+    # Step 1: 消除直接双向环路 — 每对 source/target 只保留流量更大的方向
     df['pair_key'] = df.apply(lambda r: tuple(sorted([r['source'], r['target']])), axis=1)
     df = df.loc[df.groupby('pair_key')['value'].idxmax()].drop(columns=['pair_key'])
+
+    # Step 2: 确保整体 DAG — 按流量降序贪心建图，跳过会形成多跳环路的边
+    edges = df.sort_values('value', ascending=False)
+    adj = {}
+    dag_rows = []
+
+    def _creates_cycle(src, tgt):
+        """BFS 从 tgt 出发，检查能否回到 src"""
+        visited = set()
+        stack = [tgt]
+        while stack:
+            node = stack.pop()
+            if node == src:
+                return True
+            if node not in visited:
+                visited.add(node)
+                stack.extend(adj.get(node, []))
+        return False
+
+    for _, r in edges.iterrows():
+        s, t = r['source'], r['target']
+        if not _creates_cycle(s, t):
+            adj.setdefault(s, []).append(t)
+            dag_rows.append(r.to_dict())
+
+    df = pd.DataFrame(dag_rows)
 
     all_titles = pd.unique(df[["source", "target"]].values.ravel("K"))
     nodes = [{"name": str(t)} for t in all_titles]
