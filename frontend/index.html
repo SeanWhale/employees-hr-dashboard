@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise HR Insights 360 — 企业人力资本全局指挥舱</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./css/style.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+<div id="app" v-cloak>
+    <!-- ========== 头部 ========== -->
+    <header class="header">
+        <h1>Enterprise HR Insights 360 — 企业人力资本全局指挥舱</h1>
+        <div style="display:flex;align-items:center;gap:20px;">
+            <input v-model="searchText" @input="onSearch" placeholder="搜索部门/职级/群体..."
+                   style="background:rgba(16,30,54,0.9);color:#e2e8f0;border:1px solid rgba(0,242,254,0.3);border-radius:6px;padding:6px 14px;width:220px;font-size:14px;outline:none;">
+            <button @click="toggleFullscreen" title="全屏 (F)" style="background:rgba(0,242,254,0.1);color:#00f2fe;border:1px solid rgba(0,242,254,0.3);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:14px;">⛶ 全屏</button>
+            <span class="time">{{ currentTime }}</span>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- ========== KPI 翻牌器 ========== -->
+        <section class="kpi-panel">
+            <div class="kpi-card">
+                <div class="kpi-title">在职总人数</div>
+                <div class="kpi-value text-cyan">{{ fmt(kpi.total) }} <span class="unit">人</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">平均薪资</div>
+                <div class="kpi-value text-green">$ {{ fmt(kpi.avg_s) }}</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">最高薪资</div>
+                <div class="kpi-value text-yellow">$ {{ fmt(kpi.max_s) }}</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">最低薪资</div>
+                <div class="kpi-value" style="color:#ff4757;">$ {{ fmt(kpi.min_s) }}</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-title">薪资标准差</div>
+                <div class="kpi-value" style="color:#a29bfe;">$ {{ fmt(kpi.std_s) }}</div>
+            </div>
+        </section>
+
+        <!-- ========== Row 1: 部门分布 ========== -->
+        <section class="charts-panel">
+            <div class="chart-wrapper sub-box">
+                <h3 class="chart-title">各部门人员分布 (Req 3 统计图)</h3>
+                <div id="c_dept_pie" class="echart-box"></div>
+            </div>
+            <div class="chart-wrapper main-box">
+                <h3 class="chart-title">部门人数与薪资效能对比 (Req 5 图表选择)</h3>
+                <div id="c_dept_bar" class="echart-box"></div>
+            </div>
+        </section>
+
+        <!-- ========== Row 2: AI 聚类分析 (Req 2) ========== -->
+        <section class="charts-panel">
+            <div class="chart-wrapper main-box">
+                <h3 class="chart-title">AI 人才聚类 (K-Means + PCA降维投影) — 点击散点查看员工详情 (Req 2 聚类 + Req 9 交互)</h3>
+                <div id="c_pca" class="echart-box"></div>
+            </div>
+            <div class="chart-wrapper sub-box">
+                <h3 class="chart-title">聚类群体雷达特征 + 轮廓系数最优K (Req 2 相依性)</h3>
+                <div id="c_radar" class="echart-box" style="min-height:200px;"></div>
+                <div id="c_silhouette" class="echart-box" style="min-height:180px;"></div>
+            </div>
+        </section>
+
+        <!-- ========== Row 2.5: 聚类对比 + DBSCAN ========== -->
+        <section class="charts-panel">
+            <div class="chart-wrapper sub-box">
+                <h3 class="chart-title">四类群体多维对比 (Req 2 聚类比较)</h3>
+                <div id="c_cluster_cmp" class="echart-box"></div>
+            </div>
+            <div class="chart-wrapper sub-box">
+                <h3 class="chart-title">DBSCAN 密度聚类对比</h3>
+                <div id="c_dbscan" class="echart-box"></div>
+            </div>
+        </section>
+
+        <!-- ========== Row 3: 薪资历史动态演变 (Req 8) ========== -->
+        <section class="charts-panel">
+            <div class="chart-wrapper" style="flex:1;">
+                <h3 class="chart-title">1985-2002 部门薪资动态演变 (Req 8 动态可视化) — 自动播放</h3>
+                <div id="c_timeline" class="echart-box" style="min-height:420px;"></div>
+            </div>
+        </section>
+
+        <!-- ========== Row 4: 多模型预测验证 (Req 4) ========== -->
+        <section class="charts-panel">
+            <div class="chart-wrapper" style="flex:1;">
+                <h3 class="chart-title with-controls">
+                    多模型推演验证: 1985-1996训练 → 1997-2002验证 (Req 4 推导+验证)
+                    <span class="chart-controls">
+                        <select v-model="forecastModel" @change="renderForecast">
+                            <option value="all">全部模型对比</option>
+                            <option value="线性回归">仅线性回归</option>
+                            <option value="二次多项式">仅二次多项式</option>
+                            <option value="三次多项式">仅三次多项式</option>
+                        </select>
+                    </span>
+                </h3>
+                <div id="c_forecast" class="echart-box" style="min-height:450px;"></div>
+            </div>
+        </section>
+
+        <!-- ========== Row 5: 相关性分析 (Req 6) + 相似性 (Req 2) ========== -->
+        <section class="charts-panel">
+            <div class="chart-wrapper sub-box">
+                <h3 class="chart-title with-controls">
+                    字段相关性热力图 (Req 6)
+                    <span class="chart-controls">
+                        <select v-model="corrMethod" @change="renderCorrelation">
+                            <option value="pearson">Pearson 相关系数</option>
+                            <option value="spearman">Spearman 秩相关</option>
+                            <option value="partial">偏相关系数</option>
+                            <option value="mutual_info">互信息 (MI)</option>
+                        </select>
+                    </span>
+                </h3>
+                <div id="c_corr_heat" class="echart-box" style="min-height:320px;"></div>
+            </div>
+            <div class="chart-wrapper main-box">
+                <h3 class="chart-title with-controls">
+                    部门特征相似度 (Req 2 相似性)
+                    <span class="chart-controls">
+                        <select v-model="simMetric" @change="renderSimilarity">
+                            <option value="cosine">余弦相似度</option>
+                            <option value="euclidean">欧氏距离</option>
+                        </select>
+                    </span>
+                </h3>
+                <div id="c_similarity" class="echart-box" style="min-height:320px;"></div>
+            </div>
+        </section>
+
+        <!-- ========== Row 6: 回归散点 ========== -->
+        <section class="charts-panel">
+            <div class="chart-wrapper" style="flex:1;">
+                <h3 class="chart-title">司龄-薪资回归分析 (含95%置信区间) (Req 6)</h3>
+                <div id="c_regression" class="echart-box" style="min-height:380px;"></div>
+            </div>
+        </section>
+
+        <!-- ========== Row 7: 桑基图 + 薪资分布 ========== -->
+        <section class="charts-panel">
+            <div class="chart-wrapper main-box">
+                <h3 class="chart-title">职级流动路径桑基图 (Req 3 分析图)</h3>
+                <div id="c_sankey" class="echart-box" style="min-height:380px;"></div>
+            </div>
+            <div class="chart-wrapper sub-box">
+                <h3 class="chart-title">各部门薪资箱线图 (含离群值) (Req 3)</h3>
+                <div id="c_box" class="echart-box"></div>
+            </div>
+        </section>
+
+        <!-- ========== Row 8: 性别分析 ========== -->
+        <section class="charts-panel">
+            <div class="chart-wrapper sub-box">
+                <h3 class="chart-title">各部门性别比例 (Req 3)</h3>
+                <div id="c_gender_ratio" class="echart-box"></div>
+            </div>
+            <div class="chart-wrapper sub-box">
+                <h3 class="chart-title">M/F 薪资差异 (Req 5)</h3>
+                <div id="c_gender_pay" class="echart-box"></div>
+            </div>
+            <div class="chart-wrapper sub-box">
+                <h3 class="chart-title">职级转岗耗时分布 (Req 3)</h3>
+                <div id="c_transition" class="echart-box"></div>
+            </div>
+        </section>
+
+        <!-- ========== Row 9: 外部数据联动 (Req 10) ========== -->
+        <section class="charts-panel">
+            <div class="chart-wrapper main-box">
+                <h3 class="chart-title">内部薪资 vs 行业基准 — 跨数据中心联动 (Req 10)</h3>
+                <div id="c_benchmark" class="echart-box" style="min-height:380px;"></div>
+            </div>
+            <div class="chart-wrapper sub-box">
+                <h3 class="chart-title">薪资演变趋势 (P10-P90) (Req 8 动态)</h3>
+                <div id="c_evolution" class="echart-box"></div>
+            </div>
+        </section>
+
+        <!-- ========== Row 10: 中国地图 + 留任分析 ========== -->
+        <section class="charts-panel">
+            <div class="chart-wrapper main-box">
+                <h3 class="chart-title">企业人才资源全国分布 (Req 7 地图)</h3>
+                <div id="c_map" class="echart-box"></div>
+            </div>
+            <div class="chart-wrapper sub-box">
+                <h3 class="chart-title">员工留任/稳定性分类 (Req 3 聚类)</h3>
+                <div id="c_retention" class="echart-box"></div>
+            </div>
+        </section>
+
+        <!-- ========== Row 11: 分部门预测 + 薪资增长 ========== -->
+        <section class="charts-panel">
+            <div class="chart-wrapper main-box">
+                <h3 class="chart-title with-controls">
+                    分部门薪资预测准确度 (Req 4)
+                    <span class="chart-controls">
+                        <select v-model="deptForecastSel" @change="renderDeptForecast">
+                            <option value="all">全部部门</option>
+                            <option v-for="d in deptForecastList" :key="d" :value="d">{{ d }}</option>
+                        </select>
+                    </span>
+                </h3>
+                <div id="c_dept_fc" class="echart-box" style="min-height:420px;"></div>
+            </div>
+            <div class="chart-wrapper sub-box">
+                <h3 class="chart-title with-controls">
+                    薪资增长曲线 (Req 3)
+                    <span class="chart-controls">
+                        <select v-model="growthView" @change="renderGrowth">
+                            <option value="dept">按部门</option>
+                            <option value="title">按职级</option>
+                            <option value="curves">个体曲线</option>
+                        </select>
+                    </span>
+                </h3>
+                <div id="c_growth" class="echart-box"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========== 员工详情弹窗 (Req 9) ========== -->
+    <div class="modal" v-if="showModal" @click.self="showModal=false">
+        <div class="modal-content">
+            <span class="close-btn" @click="showModal=false">&times;</span>
+            <h2 style="color:#00f2fe;margin-bottom:15px;">员工档案穿透</h2>
+            <div class="emp-details" v-if="selectedEmp">
+                <p><strong>编号：</strong>{{ selectedEmp.emp_no }}</p>
+                <p><strong>部门：</strong>{{ selectedEmp.dept_name }}</p>
+                <p><strong>职级：</strong>{{ selectedEmp.title }}</p>
+                <p><strong>薪资：</strong><span class="text-yellow">${{ fmt(selectedEmp.salary) }}</span></p>
+                <p><strong>司龄：</strong>{{ selectedEmp.tenure }} 年 | <strong>年龄：</strong>{{ selectedEmp.age }} 岁</p>
+                <div class="badge">{{ selectedEmp.cluster_name }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="./js/app.js"></script>
+</body>
+</html>
