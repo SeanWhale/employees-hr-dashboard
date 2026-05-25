@@ -88,6 +88,21 @@ def get_clustering():
     dbscan_result = run_dbscan(features, df)
     pca_result = run_pca(features, df)
 
+    dept_mapping = {
+        "Development": 0, "Sales": 1, "Marketing": 2, "Finance": 3,
+        "Human Resources": 4, "Production": 5, "Quality Management": 6,
+        "Research": 7, "Customer Service": 8
+    }
+    points_3d = []
+    for _, r in df.iterrows():
+        points_3d.append([
+            float(r['tenure']),
+            float(r['salary']),
+            dept_mapping.get(r['dept_name'], -1),
+            r['dept_name'],
+            r['cluster_name']
+        ])
+
     return {
         "scatter": df[['emp_no', 'salary', 'tenure', 'age', 'dept_name', 'title', 'cluster_name']].to_dict(orient="records"),
         "radar": radar,
@@ -96,6 +111,7 @@ def get_clustering():
         "comparison": comparison,
         "dbscan": dbscan_result,
         "pca": pca_result,
+        "points_3d": points_3d,
         "best_k": best_k,
         "as_of_date": DATASET_MAX_DATE
     }
@@ -144,10 +160,8 @@ def get_correlation():
         return {}
 
     df = raw_df.reset_index(drop=True)
-    cols = ['salary', 'tenure', 'age']
-    X = df[cols].astype(float)
 
-    pearson, spearman, partial, mi, labels = compute_correlation_matrices(X)
+    pearson, spearman, partial, mi, labels = compute_correlation_matrices(df)
 
     regression = compute_regression(df)
 

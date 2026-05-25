@@ -2,50 +2,77 @@
 # -*- coding: utf-8 -*-
 """统计计算封装 — Pearson / Mutual Info / Cosine / Euclidean / 回归拟合"""
 import numpy as np
+import pandas as pd
 from scipy.spatial.distance import cosine, euclidean
 from scipy.stats import pearsonr
 from sklearn.linear_model import LinearRegression
 from sklearn.feature_selection import mutual_info_regression
 
 
-def compute_correlation_matrices(X):
-    """计算 Pearson / Spearman / Partial / Mutual Info 四个 3×3 矩阵"""
-    cols = ['salary', 'tenure', 'age']
+def compute_correlation_matrices(df):
+    """计算 Pearson / Spearman / Partial / Mutual Info 相关矩阵（4×4）
+
+    输入 DataFrame 须包含 salary, tenure, age, gender 列。
+    gender 编码为二进制数值列。
+    """
+    df = df.copy()
+
+    # --- 性别编码：M=1, F=0 ---
+    if 'gender' in df.columns:
+        df['gender_encoded'] = (df['gender'] == 'M').astype(int)
+        df = df.drop(columns=['gender'])
+
+    # 固定 4 列顺序
+    cols = ['salary', 'tenure', 'age', 'gender_encoded']
+    labels = ['薪资', '工龄', '年龄', '性别(男)']
+    n = len(cols)
+
+    X = df[cols].astype(float)
+
+    # --- 零方差安全保护 ---
     std_devs = X.std()
     if (std_devs == 0).any():
-        pearson = np.eye(3).tolist()
-        spearman = np.eye(3).tolist()
-        partial = np.eye(3).tolist()
-    else:
-        try:
-            pearson = X.corr().round(4).values.tolist()
-            spearman = X.corr(method='spearman').round(4).values.tolist()
+        empty = np.eye(n).tolist()
+        return empty, empty, empty, empty, labels
 
-            partial = np.zeros((3, 3))
-            lr_partial = LinearRegression()
-            for i in range(3):
-                for j in range(3):
-                    if i == j:
-                        partial[i][j] = 1.0
+    # --- Pearson & Spearman ---
+    try:
+        pearson = X.corr().round(4).values.tolist()
+        spearman = X.corr(method='spearman').round(4).values.tolist()
+    except Exception:
+        empty = np.eye(n).tolist()
+        return empty, empty, empty, empty, labels
+
+    # --- Partial 偏相关（控制所有其他变量） ---
+    try:
+        partial = np.zeros((n, n))
+        lr = LinearRegression()
+        for i in range(n):
+            for j in range(n):
+                if i == j:
+                    partial[i][j] = 1.0
+                else:
+                    other_idx = [k for k in range(n) if k != i and k != j]
+                    if len(other_idx) == 0:
+                        partial[i][j] = pearson[i][j]
                     else:
-                        k = 3 - i - j
-                        ri, rj, rk = X.iloc[:, i], X.iloc[:, j], X.iloc[:, k]
-                        lr_partial.fit(rk.values.reshape(-1, 1), ri.values)
-                        ri_res = ri.values - lr_partial.predict(rk.values.reshape(-1, 1)).ravel()
-                        lr_partial.fit(rk.values.reshape(-1, 1), rj.values)
-                        rj_res = rj.values - lr_partial.predict(rk.values.reshape(-1, 1)).ravel()
-
+                        X_other = X.iloc[:, other_idx].values
+                        Xi = X.iloc[:, i].values
+                        Xj = X.iloc[:, j].values
+                        lr.fit(X_other, Xi)
+                        ri_res = Xi - lr.predict(X_other).ravel()
+                        lr.fit(X_other, Xj)
+                        rj_res = Xj - lr.predict(X_other).ravel()
                         r_val, _ = pearsonr(ri_res, rj_res)
                         partial[i][j] = round(r_val, 4) if not np.isnan(r_val) else 0.0
-            partial = partial.tolist()
-        except Exception:
-            pearson = np.eye(3).tolist()
-            spearman = np.eye(3).tolist()
-            partial = np.eye(3).tolist()
+        partial = partial.tolist()
+    except Exception:
+        partial = np.eye(n).tolist()
 
-    mi = np.zeros((3, 3))
-    for i in range(3):
-        for j in range(3):
+    # --- Mutual Info 互信息 ---
+    mi = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
             try:
                 mi_val = mutual_info_regression(X.iloc[:, [i]].values, X.iloc[:, j].values)[0]
                 mi[i][j] = round(float(mi_val), 4)
@@ -53,7 +80,7 @@ def compute_correlation_matrices(X):
                 mi[i][j] = 0.0
     mi = mi.tolist()
 
-    return pearson, spearman, partial, mi, cols
+    return pearson, spearman, partial, mi, labels
 
 
 def to_echarts_heatmap(matrix, n_cols):

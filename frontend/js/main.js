@@ -12,7 +12,7 @@ import {
     fetchRetention, fetchDeptForecast, fetchGeoJSON
 } from './api.js';
 
-import { renderPCA, renderRadar, renderSilhouette, renderClusterCmp, renderDBSCAN } from './charts/clusterCharts.js';
+import { renderPCA, renderRadar, renderSilhouette, renderClusterCmp, renderCluster3D } from './charts/clusterCharts.js';
 import {
     renderForecast as _renderForecast,
     renderDeptForecast as _renderDeptForecast,
@@ -118,7 +118,7 @@ createApp({
             if (kpiD) kpi.value = kpiD;
             if (deptD) { safeRender('deptPie', renderDeptPie, deptD, { searchText, onSearch }); safeRender('deptBar', renderDeptBar, deptD); }
             if (clusterD) { safeRender('PCA', renderPCA, clusterD, { selectedEmp, showModal }); safeRender('Radar', renderRadar, clusterD); safeRender('Silhouette', renderSilhouette, clusterD);
-                             safeRender('ClusterCmp', renderClusterCmp, clusterD); safeRender('DBSCAN', renderDBSCAN, clusterD); }
+                             safeRender('ClusterCmp', renderClusterCmp, clusterD); safeRender('Cluster3D', renderCluster3D, 'c_cluster_3d', clusterD); }
             if (historyD) safeRender('Timeline', renderTimeline, historyD);
             if (forecastD) safeRender('Forecast', _renderForecast, forecastD, forecastModel);
             if (corrD) safeRender('Correlation', _renderCorrelation, corrD, corrMethod);

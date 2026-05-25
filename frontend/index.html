@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="./css/style.css">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
@@ -52,11 +53,11 @@
         <!-- ========== Row 1: 部门分布 ========== -->
         <section class="charts-panel">
             <div class="chart-wrapper sub-box">
-                <h3 class="chart-title">各部门人员分布 (Req 3 统计图)</h3>
+                <h3 class="chart-title">各部门人员分布</h3>
                 <div id="c_dept_pie" class="echart-box"></div>
             </div>
             <div class="chart-wrapper main-box">
-                <h3 class="chart-title">部门人数与薪资效能对比 (Req 5 图表选择)</h3>
+                <h3 class="chart-title">部门人数与薪资效能对比</h3>
                 <div id="c_dept_bar" class="echart-box"></div>
             </div>
         </section>
@@ -64,11 +65,11 @@
         <!-- ========== Row 2: AI 聚类分析 (Req 2) ========== -->
         <section class="charts-panel">
             <div class="chart-wrapper main-box">
-                <h3 class="chart-title">AI 人才聚类 (K-Means + PCA降维投影) — 点击散点查看员工详情 (Req 2 聚类 + Req 9 交互)</h3>
+                <h3 class="chart-title">AI 人才聚类 (K-Means + PCA降维投影) — 点击散点查看员工详情</h3>
                 <div id="c_pca" class="echart-box"></div>
             </div>
             <div class="chart-wrapper sub-box">
-                <h3 class="chart-title">聚类群体雷达特征 + 轮廓系数最优K (Req 2 相依性)</h3>
+                <h3 class="chart-title">聚类群体雷达特征 + 轮廓系数最优K</h3>
                 <div id="c_radar" class="echart-box" style="min-height:200px;"></div>
                 <div id="c_silhouette" class="echart-box" style="min-height:180px;"></div>
             </div>
@@ -77,19 +78,19 @@
         <!-- ========== Row 2.5: 聚类对比 + DBSCAN ========== -->
         <section class="charts-panel">
             <div class="chart-wrapper sub-box">
-                <h3 class="chart-title">四类群体多维对比 (Req 2 聚类比较)</h3>
+                <h3 class="chart-title">四类群体多维对比</h3>
                 <div id="c_cluster_cmp" class="echart-box"></div>
             </div>
-            <div class="chart-wrapper sub-box">
-                <h3 class="chart-title">DBSCAN 密度聚类对比</h3>
-                <div id="c_dbscan" class="echart-box"></div>
+            <div class="chart-wrapper main-box">
+                <h3 class="chart-title">3D 人才聚类 — 工龄·薪资·部门 (裸眼 3D 自转)</h3>
+                <div id="c_cluster_3d" class="echart-box" style="height:400px;"></div>
             </div>
         </section>
 
         <!-- ========== Row 3: 薪资历史动态演变 (Req 8) ========== -->
         <section class="charts-panel">
             <div class="chart-wrapper" style="flex:1;">
-                <h3 class="chart-title">1985-2002 部门薪资动态演变 (Req 8 动态可视化) — 自动播放</h3>
+                <h3 class="chart-title">1985-2002 部门薪资动态演变 — 自动播放</h3>
                 <div id="c_timeline" class="echart-box" style="min-height:420px;"></div>
             </div>
         </section>
@@ -98,7 +99,7 @@
         <section class="charts-panel">
             <div class="chart-wrapper" style="flex:1;">
                 <h3 class="chart-title with-controls">
-                    多模型推演验证: 1985-1996训练 → 1997-2002验证 (Req 4 推导+验证)
+                    多模型推演验证: 1985-1996训练 → 1997-2002验证
                     <span class="chart-controls">
                         <select v-model="forecastModel" @change="renderForecast">
                             <option value="all">全部模型对比</option>
@@ -116,7 +117,7 @@
         <section class="charts-panel">
             <div class="chart-wrapper sub-box">
                 <h3 class="chart-title with-controls">
-                    字段相关性热力图 (Req 6)
+                    字段相关性热力图
                     <span class="chart-controls">
                         <select v-model="corrMethod" @change="renderCorrelation">
                             <option value="pearson">Pearson 相关系数</option>
@@ -130,7 +131,7 @@
             </div>
             <div class="chart-wrapper main-box">
                 <h3 class="chart-title with-controls">
-                    部门特征相似度 (Req 2 相似性)
+                    部门特征相似度
                     <span class="chart-controls">
                         <select v-model="simMetric" @change="renderSimilarity">
                             <option value="cosine">余弦相似度</option>
@@ -145,7 +146,7 @@
         <!-- ========== Row 6: 回归散点 ========== -->
         <section class="charts-panel">
             <div class="chart-wrapper" style="flex:1;">
-                <h3 class="chart-title">司龄-薪资回归分析 (含95%置信区间) (Req 6)</h3>
+                <h3 class="chart-title">司龄-薪资回归分析 (含95%置信区间)</h3>
                 <div id="c_regression" class="echart-box" style="min-height:380px;"></div>
             </div>
         </section>
@@ -153,11 +154,11 @@
         <!-- ========== Row 7: 桑基图 + 薪资分布 ========== -->
         <section class="charts-panel">
             <div class="chart-wrapper main-box">
-                <h3 class="chart-title">职级流动路径桑基图 (Req 3 分析图)</h3>
+                <h3 class="chart-title">职级流动路径桑基图</h3>
                 <div id="c_sankey" class="echart-box" style="min-height:380px;"></div>
             </div>
             <div class="chart-wrapper sub-box">
-                <h3 class="chart-title">各部门薪资箱线图 (含离群值) (Req 3)</h3>
+                <h3 class="chart-title">各部门薪资箱线图 (含离群值)</h3>
                 <div id="c_box" class="echart-box"></div>
             </div>
         </section>
@@ -165,15 +166,15 @@
         <!-- ========== Row 8: 性别分析 ========== -->
         <section class="charts-panel">
             <div class="chart-wrapper sub-box">
-                <h3 class="chart-title">各部门性别比例 (Req 3)</h3>
+                <h3 class="chart-title">各部门性别比例</h3>
                 <div id="c_gender_ratio" class="echart-box"></div>
             </div>
             <div class="chart-wrapper sub-box">
-                <h3 class="chart-title">M/F 薪资差异 (Req 5)</h3>
+                <h3 class="chart-title">M/F 薪资差异</h3>
                 <div id="c_gender_pay" class="echart-box"></div>
             </div>
             <div class="chart-wrapper sub-box">
-                <h3 class="chart-title">职级转岗耗时分布 (Req 3)</h3>
+                <h3 class="chart-title">职级转岗耗时分布</h3>
                 <div id="c_transition" class="echart-box"></div>
             </div>
         </section>
@@ -181,11 +182,11 @@
         <!-- ========== Row 9: 外部数据联动 (Req 10) ========== -->
         <section class="charts-panel">
             <div class="chart-wrapper main-box">
-                <h3 class="chart-title">内部薪资 vs 行业基准 — 跨数据中心联动 (Req 10)</h3>
+                <h3 class="chart-title">内部薪资 vs 行业基准 — 跨数据中心联动</h3>
                 <div id="c_benchmark" class="echart-box" style="min-height:380px;"></div>
             </div>
             <div class="chart-wrapper sub-box">
-                <h3 class="chart-title">薪资演变趋势 (P10-P90) (Req 8 动态)</h3>
+                <h3 class="chart-title">薪资演变趋势 (P10-P90)</h3>
                 <div id="c_evolution" class="echart-box"></div>
             </div>
         </section>
@@ -193,11 +194,11 @@
         <!-- ========== Row 10: 中国地图 + 留任分析 ========== -->
         <section class="charts-panel">
             <div class="chart-wrapper main-box">
-                <h3 class="chart-title">企业人才资源全国分布 (Req 7 地图)</h3>
+                <h3 class="chart-title">企业人才资源全国分布</h3>
                 <div id="c_map" class="echart-box"></div>
             </div>
             <div class="chart-wrapper sub-box">
-                <h3 class="chart-title">员工留任/稳定性分类 (Req 3 聚类)</h3>
+                <h3 class="chart-title">员工留任/稳定性分类</h3>
                 <div id="c_retention" class="echart-box"></div>
             </div>
         </section>
@@ -206,7 +207,7 @@
         <section class="charts-panel">
             <div class="chart-wrapper main-box">
                 <h3 class="chart-title with-controls">
-                    分部门薪资预测准确度 (Req 4)
+                    分部门薪资预测准确度
                     <span class="chart-controls">
                         <select v-model="deptForecastSel" @change="renderDeptForecast">
                             <option value="all">全部部门</option>
@@ -218,7 +219,7 @@
             </div>
             <div class="chart-wrapper sub-box">
                 <h3 class="chart-title with-controls">
-                    薪资增长曲线 (Req 3)
+                    薪资增长曲线
                     <span class="chart-controls">
                         <select v-model="growthView" @change="renderGrowth">
                             <option value="dept">按部门</option>

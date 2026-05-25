@@ -36,10 +36,10 @@ def get_forecast_data():
 
 
 def get_correlation_data():
-    """相关性分析 — 5000 条抽样员工特征数据"""
+    """相关性分析 — 5000 条抽样员工特征数据（含性别维度）"""
     con = get_connection()
     return con.execute(f"""
-        SELECT salary, dept_name, title,
+        SELECT salary, gender,
                DATEDIFF('year', CAST(hire_date AS DATE), CAST('{DATASET_MAX_DATE}' AS DATE)) AS tenure,
                DATEDIFF('year', CAST(birth_date AS DATE), CAST('{DATASET_MAX_DATE}' AS DATE)) AS age
         FROM current_employees

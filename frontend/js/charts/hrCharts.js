@@ -53,15 +53,13 @@ export function renderCorrelation(data, corrMethod) {
     const method = corrMethod.value;
     const matrix = data[method];
     const labels = data.labels;
-    const labelMap = { salary: '薪资', tenure: '司龄', age: '年龄' };
-    const displayLabels = labels.map(l => labelMap[l] || l);
 
     const heatData = [];
     for (let i = 0; i < labels.length; i++)
         for (let j = 0; j < labels.length; j++)
             heatData.push([i, j, matrix[i][j]]);
 
-    const titles = { pearson: 'Pearson 相关系数', spearman: 'Spearman 秩相关', partial: '偏相关系数 (控第三变量)', mutual_info: '互信息 (Mutual Info)' };
+    const titles = { pearson: 'Pearson 相关系数', spearman: 'Spearman 秩相关', partial: '偏相关系数 (控其他变量)', mutual_info: '互信息 (Mutual Info)' };
     const isMI = method === 'mutual_info';
     const flatVals = matrix.flat();
     const vMin = isMI ? 0 : -1;
@@ -69,14 +67,14 @@ export function renderCorrelation(data, corrMethod) {
 
     c.setOption({
         title: { text: titles[method] || '', textStyle: { color: '#00f2fe', fontSize: 13 }, left: 'center', top: 5 },
-        tooltip: { position: 'top', formatter: (p) => `${displayLabels[p.value[0]]} vs ${displayLabels[p.value[1]]}: ${p.value[2].toFixed(4)}` },
-        grid: { left: '15%', right: '8%', bottom: '15%', top: '18%' },
-        xAxis: { type: 'category', data: displayLabels, axisLabel: { color: '#a0aec0' }, splitArea: { show: true } },
-        yAxis: { type: 'category', data: displayLabels, axisLabel: { color: '#a0aec0' }, splitArea: { show: true } },
-        visualMap: { min: vMin, max: vMax, calculable: true, orient: 'horizontal', left: 'center', bottom: '2%',
+        tooltip: { position: 'top', formatter: (p) => `${labels[p.value[0]]} vs ${labels[p.value[1]]}: ${p.value[2].toFixed(4)}` },
+        grid: { left: '16%', right: '8%', bottom: '30%', top: '18%' },
+        xAxis: { type: 'category', data: labels, axisLabel: { rotate: 35, margin: 15, color: '#a0aec0', fontSize: 12 }, splitArea: { show: true } },
+        yAxis: { type: 'category', data: labels, axisLabel: { color: '#a0aec0', fontSize: 12 }, splitArea: { show: true } },
+        visualMap: { min: vMin, max: vMax, calculable: true, orient: 'horizontal', left: 'center', bottom: '1%',
                       inRange: { color: isMI ? ['#1f2937', '#00f2fe'] : ['#ff4757', '#1f2937', '#00f2fe'] }, textStyle: { color: '#a0aec0' } },
         series: [{ name: '相关性', type: 'heatmap', data: heatData,
-                   label: { show: true, formatter: (p) => Number(p.value[2]).toFixed(3), color: '#e2e8f0', fontSize: 11 },
+                   label: { show: true, formatter: (p) => Number(p.value[2]).toFixed(3), color: '#e2e8f0', fontSize: 12 },
                    emphasis: { itemStyle: { shadowBlur: 8, shadowColor: 'rgba(0,242,254,0.3)' } } }]
     });
 }
@@ -101,12 +99,12 @@ export function renderSimilarity(data, simMetric) {
     c.setOption({
         title: { text: title, textStyle: { color: '#f6e05e', fontSize: 13 }, left: 'center', top: 5 },
         tooltip: { position: 'top', formatter: (p) => `${depts[p.value[0]]} — ${depts[p.value[1]]}: ${p.value[2].toFixed(3)}` },
-        grid: { left: '18%', right: '8%', bottom: '15%', top: '18%' },
-        xAxis: { type: 'category', data: depts, axisLabel: { rotate: 30, color: '#a0aec0', fontSize: 10 }, splitArea: { show: true } },
+        grid: { left: '22%', right: '8%', bottom: '28%', top: '18%' },
+        xAxis: { type: 'category', data: depts, axisLabel: { rotate: 35, margin: 15, color: '#a0aec0', fontSize: 10 }, splitArea: { show: true } },
         yAxis: { type: 'category', data: depts, axisLabel: { color: '#a0aec0', fontSize: 10 }, splitArea: { show: true } },
         visualMap: {
             min: isDist ? 0 : -1, max: isDist ? Math.max(...matrix.flat()) : 1,
-            calculable: true, orient: 'horizontal', left: 'center', bottom: '2%',
+            calculable: true, orient: 'horizontal', left: 'center', bottom: '1%',
             inRange: { color: isDist ? ['#00f2fe', '#1f2937', '#ff4757'] : ['#ff4757', '#1f2937', '#00f2fe'] },
             textStyle: { color: '#a0aec0' }
         },

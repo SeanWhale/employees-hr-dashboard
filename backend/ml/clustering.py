@@ -20,9 +20,9 @@ def compute_silhouette_scores(features):
 
 
 def find_best_k(sil_scores):
-    if not sil_scores:
-        return 4
-    return max(sil_scores, key=lambda x: x['silhouette'])['k']
+    """锁定 4 类员工画像：核心高薪层 / 中坚平稳层 / 年轻潜力层 / 基层起步层
+       轮廓系数仍在 compute_silhouette_scores 中计算，供大屏图表展示历史对比数据。"""
+    return 4
 
 
 def run_kmeans(features, best_k):
