@@ -106,15 +106,27 @@ createApp({
             const api = (path) => axios.get(`${API}${path}`).then(r => r.data).catch(e => { console.error(path, e); return null; });
 
             // 并行请求
-            const [kpiD, deptD, clusterD, historyD, forecastD, corrD, simD, sankeyD,
-                   distD, genderD, transD, evolD, benchD, mapD, retD, deptFcD, growthD] =
-                await Promise.all([
-                    api('/kpi'), api('/dept_distribution'), api('/clustering'), api('/salary_history'),
-                    api('/forecast'), api('/correlation'), api('/similarity'), api('/title_sankey'),
-                    api('/salary_distribution'), api('/gender_analysis'), api('/title_transition'),
-                    api('/salary_evolution'), api('/external_benchmark'), api('/office_map'),
-                    api('/retention'), api('/dept_forecast'), api('/salary_growth')
-                ]);
+        const [kpiD, deptD, clusterD, historyD, forecastD, corrD, simD, sankeyD,
+            distD, genderD, transD, evolD, benchD, mapD, retD, deptFcD, growthD] =
+            await Promise.all([
+                api('/v1/overview/kpi'), 
+                api('/v1/overview/dept_distribution'), 
+                api('/v1/advanced/clustering'), 
+                api('/v1/salary/history'),
+                api('/v1/advanced/forecast'), 
+                api('/v1/advanced/correlation'), 
+                api('/v1/advanced/similarity'), 
+                api('/v1/advanced/title_sankey'),
+                api('/v1/salary/distribution'), 
+                api('/v1/advanced/gender_analysis'), 
+                api('/v1/advanced/title_transition'),
+                api('/v1/salary/evolution'), 
+                api('/v1/salary/external_benchmark'), 
+                api('/v1/overview/office_map'),
+                api('/v1/advanced/retention'), 
+                api('/v1/advanced/dept_forecast'), 
+                api('/v1/salary/growth')
+            ]);
 
             // 缓存
             cache = { dept: deptD, cluster: clusterD, history: historyD, forecast: forecastD,
