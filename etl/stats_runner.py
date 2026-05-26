@@ -1,3 +1,4 @@
+# File: etl/stats_runner.py
 """数据集探索性统计分析 (EDA) — 面向对象报表运行器
 
 用法:

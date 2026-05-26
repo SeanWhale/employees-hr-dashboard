@@ -1,3 +1,4 @@
+# File: etl/config.py
 """ETL 元数据配置 — 路径、表结构、类型映射、dump 文件清单"""
 import re
 from pathlib import Path

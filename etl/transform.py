@@ -1,3 +1,4 @@
+# File: etl/transform.py
 """数据清洗/变换层 — 类型转换、属性标准化、时态合并、重叠修复、质量规则"""
 import pandas as pd
 

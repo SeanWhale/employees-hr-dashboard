@@ -1,3 +1,4 @@
+# File: etl/extract.py
 """
 数据提取层 — MySQL dump 文件行级解析
 

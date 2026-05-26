@@ -1,3 +1,4 @@
+// File: frontend/js/charts/hrCharts.js
 /**
  * HR 分析图表 — 部门分布 / 相关性 / 相似性 / 回归 / 桑基图 / 性别 / 转岗 / 地图 / 留任
  */

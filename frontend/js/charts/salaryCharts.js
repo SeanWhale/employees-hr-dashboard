@@ -1,3 +1,4 @@
+// File: frontend/js/charts/salaryCharts.js
 /**
  * 薪资分析图表 — 历史演变 / 箱线图 / 趋势 / 基准 / 增长 / 预测
  */

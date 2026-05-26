@@ -1,3 +1,4 @@
+// File: frontend/js/main.js
 /**
  * Enterprise HR Insights — 全局指挥舱入口
  * 组件化重构：Vue 状态管理 + API 层 + 图表渲染模块

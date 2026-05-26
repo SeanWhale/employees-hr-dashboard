@@ -1,3 +1,4 @@
+// File: frontend/js/api.js
 /**
  * Enterprise HR Insights — API 层
  * 集中管理后端接口地址与 axios 请求封装
