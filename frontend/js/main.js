@@ -1,15 +1,15 @@
 /**
- * Enterprise HR Insights 360 — 全局指挥舱入口
+ * Enterprise HR Insights — 全局指挥舱入口
  * 组件化重构：Vue 状态管理 + API 层 + 图表渲染模块
  */
 import { fmt, $, resizeHandlers, initChart, COLORS } from './utils.js';
 import {
-    fetchKPI, fetchDeptDistribution, fetchOfficeMap,
+    fetchKPI, fetchDeptDistribution,
     fetchSalaryHistory, fetchSalaryDistribution, fetchSalaryEvolution,
     fetchSalaryGrowth, fetchExternalBenchmark,
     fetchClustering, fetchForecast, fetchCorrelation, fetchSimilarity,
     fetchTitleSankey, fetchGenderAnalysis, fetchTitleTransition,
-    fetchRetention, fetchDeptForecast, fetchGeoJSON
+    fetchRetention, fetchDeptForecast
 } from './api.js';
 
 import { renderPCA, renderRadar, renderSilhouette, renderClusterCmp, renderCluster3D } from './charts/clusterCharts.js';
@@ -23,7 +23,7 @@ import {
     renderCorrelation as _renderCorrelation,
     renderSimilarity as _renderSimilarity,
     renderDeptPie, renderDeptBar, renderRegression, renderSankey,
-    renderGenderRatio, renderGenderPay, renderTransition, renderMap, renderRetention
+    renderGenderRatio, renderGenderPay, renderTransition, renderRetention
 } from './charts/hrCharts.js';
 
 const { createApp, ref, onMounted, onUnmounted, watch } = Vue;
@@ -44,7 +44,6 @@ createApp({
         const deptForecastList = ref([]);
 
         let cache = {};
-        let chinaGeoJSON = null;
         let timer = null;
 
         const updateTime = () => { currentTime.value = new Date().toLocaleString('zh-CN', { hour12: false }); };
@@ -93,22 +92,21 @@ createApp({
 
         // ---- 数据加载 ----
         const fetchAll = async () => {
-            chinaGeoJSON = await fetchGeoJSON();
 
             const [kpiD, deptD, clusterD, historyD, forecastD, corrD, simD, sankeyD,
-                distD, genderD, transD, evolD, benchD, mapD, retD, deptFcD, growthD] =
+                distD, genderD, transD, evolD, benchD, retD, deptFcD, growthD] =
                 await Promise.all([
                     fetchKPI(), fetchDeptDistribution(), fetchClustering(),
                     fetchSalaryHistory(), fetchForecast(), fetchCorrelation(),
                     fetchSimilarity(), fetchTitleSankey(), fetchSalaryDistribution(),
                     fetchGenderAnalysis(), fetchTitleTransition(), fetchSalaryEvolution(),
-                    fetchExternalBenchmark(), fetchOfficeMap(), fetchRetention(),
+                    fetchExternalBenchmark(), fetchRetention(),
                     fetchDeptForecast(), fetchSalaryGrowth()
                 ]);
 
             cache = { dept: deptD, cluster: clusterD, history: historyD, forecast: forecastD,
                       corr: corrD, sim: simD, sankey: sankeyD, dist: distD, gender: genderD,
-                      trans: transD, evol: evolD, bench: benchD, map: mapD, ret: retD,
+                      trans: transD, evol: evolD, bench: benchD, ret: retD,
                       deptFc: deptFcD, growth: growthD };
 
             const safeRender = (name, fn, ...args) => {
@@ -130,7 +128,6 @@ createApp({
             if (transD) safeRender('Transition', renderTransition, transD);
             if (evolD) safeRender('Evolution', renderEvolution, evolD);
             if (benchD) safeRender('Benchmark', renderBenchmark, benchD);
-            if (mapD && chinaGeoJSON) safeRender('Map', renderMap, mapD, chinaGeoJSON);
             if (retD) safeRender('Retention', renderRetention, retD);
             if (deptFcD) { deptForecastList.value = deptFcD.comparison?.map(d => d.dept_name) || []; safeRender('DeptForecast', _renderDeptForecast, deptFcD, deptForecastSel); }
             if (growthD) safeRender('Growth', _renderGrowth, growthD, growthView);

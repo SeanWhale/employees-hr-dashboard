@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise HR Insights 360 — 企业人力资本全局指挥舱</title>
+    <title>Enterprise HR Insights  — 企业人力资本全局指挥舱</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./css/style.css">
@@ -16,7 +16,7 @@
 <div id="app" v-cloak>
     <!-- ========== 头部 ========== -->
     <header class="header">
-        <h1>Enterprise HR Insights 360 — 企业人力资本全局指挥舱</h1>
+        <h1 style="position: relative; top: 30px; left:97px;">Enterprise HR Insights — 企业人力资本全局指挥舱</h1>
         <div style="display:flex;align-items:center;gap:20px;">
             <input v-model="searchText" @input="onSearch" placeholder="搜索部门/职级/群体..."
                    style="background:rgba(16,30,54,0.9);color:#e2e8f0;border:1px solid rgba(0,242,254,0.3);border-radius:6px;padding:6px 14px;width:220px;font-size:14px;outline:none;">
@@ -191,13 +191,9 @@
             </div>
         </section>
 
-        <!-- ========== Row 10: 中国地图 + 留任分析 ========== -->
+        <!-- ========== Row 10: 留任分析 ========== -->
         <section class="charts-panel">
-            <div class="chart-wrapper main-box">
-                <h3 class="chart-title">企业人才资源全国分布</h3>
-                <div id="c_map" class="echart-box"></div>
-            </div>
-            <div class="chart-wrapper sub-box">
+            <div class="chart-wrapper">
                 <h3 class="chart-title">员工留任/稳定性分类</h3>
                 <div id="c_retention" class="echart-box"></div>
             </div>

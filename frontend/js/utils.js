@@ -1,5 +1,5 @@
 /**
- * Enterprise HR Insights 360 — 工具函数
+ * Enterprise HR Insights — 工具函数
  * 共用的格式化、DOM 操作、图表初始化及 resize 管理
  */
 

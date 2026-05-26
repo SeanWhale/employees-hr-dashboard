@@ -214,42 +214,6 @@ export function renderTransition(data) {
     });
 }
 
-// --- 中国地图 (Req 7) ---
-export function renderMap(data, chinaGeoJSON) {
-    const c = initChart('c_map');
-    if (!c || !chinaGeoJSON) return;
-    echarts.registerMap('china', chinaGeoJSON);
-    c.setOption({
-        tooltip: {
-            trigger: 'item',
-            formatter: (p) => {
-                const v = p.value;
-                if (!v || v.length < 4) return p.name;
-                return `<div style="background:rgba(16,30,54,0.9);padding:10px;border:1px solid #00f2fe;border-radius:4px;">
-                    <b style="color:#00f2fe;font-size:15px;">${p.name}</b><br/>
-                    人数: <b style="color:#fff;">${fmt(v[3])}</b> 人<br/>
-                    均薪: <b style="color:#f6e05e;">$${fmt(v[2])}</b></div>`;
-            },
-            backgroundColor: 'transparent', borderWidth: 0, padding: 0
-        },
-        geo: {
-            map: 'china', roam: true,
-            itemStyle: { areaColor: '#101e36', borderColor: '#00f2fe', borderWidth: 1 },
-            emphasis: { areaColor: '#1a2a44', label: { show: true, color: '#fff' } }
-        },
-        series: [{
-            type: 'effectScatter', coordinateSystem: 'geo',
-            data: data,
-            symbolSize: (v) => Math.max(12, v[3] / 4500),
-            rippleEffect: { brushType: 'stroke', scale: 3 },
-            itemStyle: {
-                color: (p) => p.value[2] > 80000 ? '#f6e05e' : '#00f2fe',
-                shadowBlur: 12, shadowColor: '#00f2fe'
-            }
-        }]
-    });
-}
-
 // --- 留任分析 ---
 export function renderRetention(data) {
     const c = initChart('c_retention');

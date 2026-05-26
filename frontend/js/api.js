@@ -1,5 +1,5 @@
 /**
- * Enterprise HR Insights 360 — API 层
+ * Enterprise HR Insights — API 层
  * 集中管理后端接口地址与 axios 请求封装
  */
 
@@ -12,7 +12,6 @@ const api = (path) => axios.get(`${API}${path}`).then(r => r.data).catch(e => { 
 // ---- 总览看板 ----
 export async function fetchKPI()              { return api('/v1/overview/kpi'); }
 export async function fetchDeptDistribution() { return api('/v1/overview/dept_distribution'); }
-export async function fetchOfficeMap()        { return api('/v1/overview/office_map'); }
 
 // ---- 薪资分析 ----
 export async function fetchSalaryHistory()      { return api('/v1/salary/history'); }
@@ -31,14 +30,3 @@ export async function fetchGenderAnalysis()   { return api('/v1/advanced/gender_
 export async function fetchTitleTransition()  { return api('/v1/advanced/title_transition'); }
 export async function fetchRetention()        { return api('/v1/advanced/retention'); }
 export async function fetchDeptForecast()     { return api('/v1/advanced/dept_forecast'); }
-
-// ---- 静态数据 ----
-export async function fetchGeoJSON() {
-    try {
-        const g = await axios.get('data/china_geo.json');
-        return g.data;
-    } catch (e) {
-        console.error('本地地图数据加载失败，请检查文件路径', e);
-        return null;
-    }
-}

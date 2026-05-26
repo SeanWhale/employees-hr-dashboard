@@ -5,14 +5,9 @@
 from backend.core.config import DATASET_MAX_DATE
 
 try:
-    from dao.hr_dao import get_dept_distribution_data, get_kpi_data, get_office_map_data
+    from dao.hr_dao import get_dept_distribution_data, get_kpi_data
 except ImportError:
-    from backend.dao.hr_dao import get_dept_distribution_data, get_kpi_data, get_office_map_data
-
-COORDS = {
-    '北京': [116.40, 39.90], '上海': [121.47, 31.23], '深圳': [114.05, 22.54],
-    '广州': [113.26, 23.13], '成都': [104.06, 30.67]
-}
+    from backend.dao.hr_dao import get_dept_distribution_data, get_kpi_data
 
 
 def get_kpi():
@@ -25,16 +20,3 @@ def get_kpi():
 def get_dept_distribution():
     df = get_dept_distribution_data()
     return df.to_dict(orient="records")
-
-
-def get_office_map():
-    df = get_office_map_data()
-    result = []
-    for _, r in df.iterrows():
-        city = r['city']
-        coord = COORDS.get(city, [116.40, 39.90])
-        result.append({
-            "name": city,
-            "value": [coord[0], coord[1], int(r['avg_s']), int(r['cnt'])]
-        })
-    return result

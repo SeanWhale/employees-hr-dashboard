@@ -31,23 +31,3 @@ def get_dept_distribution_data():
         FROM current_employees
         GROUP BY dept_name ORDER BY avg_salary DESC
     """).df()
-
-
-def get_office_map_data():
-    """办公地图城市聚合原始数据"""
-    con = get_connection()
-    city_sql = """
-        CASE
-            WHEN dept_name IN ('Finance', 'Human Resources') THEN '北京'
-            WHEN dept_name IN ('Sales', 'Marketing') THEN '上海'
-            WHEN dept_name = 'Development' THEN '深圳'
-            WHEN dept_name IN ('Production', 'Quality Management') THEN '广州'
-            WHEN dept_name IN ('Customer Service', 'Research') THEN '成都'
-            ELSE '北京'
-        END AS city
-    """
-    return con.execute(f"""
-        SELECT {city_sql}, COUNT(*) AS cnt,
-               CAST(AVG(salary) AS INT) AS avg_s, CAST(MEDIAN(salary) AS INT) AS med_s
-        FROM current_employees GROUP BY city
-    """).df()

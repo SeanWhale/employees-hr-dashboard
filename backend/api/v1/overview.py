@@ -4,9 +4,9 @@
 from fastapi import APIRouter
 
 try:
-    from services.overview_srv import get_dept_distribution, get_kpi, get_office_map
+    from services.overview_srv import get_dept_distribution, get_kpi
 except ImportError:
-    from backend.services.overview_srv import get_dept_distribution, get_kpi, get_office_map
+    from backend.services.overview_srv import get_dept_distribution, get_kpi
 
 router = APIRouter(prefix="/overview", tags=["overview"])
 
@@ -19,8 +19,3 @@ def api_kpi():
 @router.get("/dept_distribution")
 def api_dept():
     return get_dept_distribution()
-
-
-@router.get("/office_map")
-def api_map():
-    return get_office_map()

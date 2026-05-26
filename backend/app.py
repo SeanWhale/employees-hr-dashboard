@@ -15,7 +15,7 @@ async def lifespan(_app: FastAPI):
     init_db()
     yield
 
-app = FastAPI(title="HR Insights 360 API", version="2.0", lifespan=lifespan)
+app = FastAPI(title="HR Insights API", version="2.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,4 +33,4 @@ app.include_router(v1_router, prefix="/api")
 @app.get("/")
 def root():
     route_count = len([r for r in app.routes if hasattr(r, "methods")])
-    return {"service": "HR Insights 360 API v2.0", "endpoints": route_count}
+    return {"service": "HR Insights API v2.0", "endpoints": route_count}
