@@ -74,7 +74,17 @@ export function renderEvolution(data) {
     if (!c || !data?.yearly) return;
     const stats = data.yearly;
     c.setOption({
-        tooltip: { trigger: 'axis' },
+        tooltip: {
+            trigger: 'axis',
+            formatter: (params) => {
+                let html = `<b>${params[0].axisValue} 年薪资数据</b><br/>`;
+                params.forEach(item => {
+                    const val = typeof item.value === 'number' ? item.value.toFixed(1) : item.value;
+                    html += `${item.marker} ${item.seriesName}: $${Number(val).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}<br/>`;
+                });
+                return html;
+            }
+        },
         legend: { data: ['中位数', '均值', 'Q1', 'Q3', 'P10', 'P90'], textStyle: { color: '#a0aec0' }, top: 5 },
         grid: { left: '8%', right: '5%', bottom: '12%', top: '18%' },
         xAxis: { type: 'category', data: stats.map(d => d.year), axisLabel: { color: '#a0aec0' }, splitLine: { show: false } },

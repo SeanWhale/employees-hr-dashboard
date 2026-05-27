@@ -29,5 +29,5 @@ export async function fetchSimilarity()       { return api('/v1/advanced/similar
 export async function fetchTitleSankey()      { return api('/v1/advanced/title_sankey'); }
 export async function fetchGenderAnalysis()   { return api('/v1/advanced/gender_analysis'); }
 export async function fetchTitleTransition()  { return api('/v1/advanced/title_transition'); }
-export async function fetchRetention()        { return api('/v1/advanced/retention'); }
+export async function fetchDeptStability()  { return api('/v1/advanced/department-stability'); }
 export async function fetchDeptForecast()     { return api('/v1/advanced/dept_forecast'); }

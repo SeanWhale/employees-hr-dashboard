@@ -58,7 +58,7 @@ body::after {
 }
 .header h1 {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 28px;
+    font-size: 36px;
     background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -67,6 +67,9 @@ body::after {
     margin: 0;
     flex: 1;
     line-height: 1.2;
+    position: relative;
+    top: -4px;
+    left: 97px;
 }
 .header > div {
     display: flex;
@@ -136,6 +139,38 @@ body::after {
     justify-content: space-between;
     gap: 12px;
 }
+.chart-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.chart-filter-bar label {
+    color: #a0aec0;
+    font-size: 13px;
+    white-space: nowrap;
+}
+.chart-filter-bar select {
+    background: rgba(16,30,54,0.9);
+    color: #e2e8f0;
+    border: 1px solid rgba(0,242,254,0.3);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.chart-filter-bar select:hover,
+.chart-filter-bar select:focus {
+    border-color: rgba(0,242,254,0.7);
+}
+.chart-filter-bar select option {
+    background: #0f1a2f;
+    color: #e2e8f0;
+}
+
 .chart-title::before {
     content: "||";
     color: var(--cyan);

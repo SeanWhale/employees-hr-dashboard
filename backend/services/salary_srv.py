@@ -74,13 +74,13 @@ def get_salary_evolution():
     for r in df.itertuples(index=False):
         stats.append({
             "year": int(r.year),
-            "mean": round(float(r.mean), 0),
-            "median": round(float(r.median), 0),
-            "std": round(float(r.std), 0) if r.std is not None else 0.0,
-            "q1": round(float(r.q1), 0),
-            "q3": round(float(r.q3), 0),
-            "p10": round(float(r.p10), 0),
-            "p90": round(float(r.p90), 0),
+            "mean": round(float(r.mean), 1),
+            "median": round(float(r.median), 1),
+            "std": round(float(r.std), 1) if r.std is not None else 0.0,
+            "q1": round(float(r.q1), 1),
+            "q3": round(float(r.q3), 1),
+            "p10": round(float(r.p10), 1),
+            "p90": round(float(r.p90), 1),
             "skew": round(float(r.skew), 3) if r.skew is not None else 0.0,
             "count": int(r.record_count)
         })

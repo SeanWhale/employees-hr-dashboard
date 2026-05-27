@@ -146,9 +146,9 @@ export function renderSankey(data) {
     c.setOption({
         tooltip: { trigger: 'item', formatter: (p) => p.dataType === 'edge' ? `${p.data.source} → ${p.data.target}: ${fmt(p.data.value)}人` : p.name },
         series: [{
-            type: 'sankey', layoutIterations: 32, nodeAlign: 'justify',
+            type: 'sankey', layoutIterations: 32, nodeAlign: 'left',
             data: data.nodes, links: data.links,
-            left: '2%', right: '2%', top: '6%', bottom: '6%',
+            left: '2%', right: '18%', top: '6%', bottom: '6%',
             nodeWidth: 16, nodeGap: 12,
             emphasis: { focus: 'adjacency' },
             lineStyle: { color: 'gradient', curveness: 0.5, opacity: 0.5 },
@@ -215,24 +215,71 @@ export function renderTransition(data) {
     });
 }
 
-// --- 留任分析 ---
-export function renderRetention(data) {
-    const c = initChart('c_retention');
-    if (!c || !data?.employees) return;
-    const groups = { 'stable': [], 'moderate': [], 'frequent': [] };
-    data.employees.forEach(e => { if (groups[e.category]) groups[e.category].push([e.total_changes, e.salary, e]); });
+// --- 部门稳定性 100% 堆叠柱状图 ---
+export function renderDeptStabilityChart(domId, data) {
+    const c = initChart(domId);
+    if (!c || !data?.departments?.length) return;
+
+    const labels = ['已离职', '在职-稳定未调岗', '在职-内部流动/晋升'];
+    const colors = ['#95a5a6', '#2ecc71', '#3498db'];
+
+    // 将绝对人数转换为百分比
+    const pctDatasets = {};
+    const n = data.departments.length;
+    for (const label of labels) {
+        pctDatasets[label] = [];
+        for (let i = 0; i < n; i++) {
+            const total = labels.reduce((sum, l) => sum + (data.datasets[l]?.[i] || 0), 0);
+            const val = data.datasets[label]?.[i] || 0;
+            pctDatasets[label].push(total > 0 ? parseFloat((val / total * 100).toFixed(1)) : 0);
+        }
+    }
+
     c.setOption({
-        color: ['#2ed573', '#f6e05e', '#ff4757'],
-        tooltip: { trigger: 'item', formatter: (p) => {
-            const e = p.data[2];
-            return `<b>#${e.emp_no}</b> — ${e.dept}<br/>部变: ${e.dept_changes} 职变: ${e.title_changes}<br/>薪资: $${fmt(e.salary)}`;
-        }},
-        legend: { data: data.summary?.map(s => s.label) || [], textStyle: { color: '#a0aec0', fontSize: 10 }, top: 3 },
-        grid: { left: '10%', right: '5%', bottom: '10%', top: '15%' },
-        xAxis: { name: '总变动次数', type: 'value', axisLabel: { color: '#a0aec0' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
-        yAxis: { name: '薪资($)', type: 'value', axisLabel: { color: '#a0aec0' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
-        series: Object.entries(groups).map(([cat, pts]) => ({
-            name: data.labels?.[cat] || cat, type: 'scatter', data: pts, symbolSize: 6
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            formatter: (params) => {
+                let html = `<b>${params[0].axisValue}</b><br/>`;
+                let sum = 0;
+                params.forEach(p => { sum += p.value; });
+                params.forEach(p => {
+                    html += `${p.marker} ${p.seriesName}: ${p.value}%<br/>`;
+                });
+                html += `<hr style="margin:4px 0;border-color:rgba(255,255,255,0.1)"/>合计: <b>${sum.toFixed(1)}%</b>`;
+                return html;
+            }
+        },
+        legend: {
+            data: labels,
+            textStyle: { color: '#e2e8f0' },
+            top: 5
+        },
+        grid: { left: '10%', right: '5%', bottom: '15%', top: '15%' },
+        xAxis: {
+            type: 'category',
+            data: data.departments,
+            axisLabel: { rotate: 30, color: 'rgba(255,255,255,0.7)', fontSize: 11 },
+            axisLine: { lineStyle: { color: 'rgba(255,255,255,0.2)' } },
+            axisTick: { lineStyle: { color: 'rgba(255,255,255,0.2)' } }
+        },
+        yAxis: {
+            type: 'value',
+            max: 100,
+            name: '占比 (%)',
+            nameTextStyle: { color: 'rgba(255,255,255,0.7)' },
+            axisLabel: { color: 'rgba(255,255,255,0.7)', formatter: '{value}%' },
+            splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)' } }
+        },
+        series: labels.map((label, i) => ({
+            name: label,
+            type: 'bar',
+            stack: 'stability',
+            data: pctDatasets[label],
+            itemStyle: { color: colors[i], borderRadius: i === labels.length - 1 ? [6, 6, 0, 0] : 0 },
+            barWidth: '50%',
+            emphasis: { focus: 'series' },
+            label: { show: false }
         }))
     });
 }

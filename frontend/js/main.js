@@ -10,7 +10,7 @@ import {
     fetchSalaryGrowth, fetchExternalBenchmark,
     fetchClustering, fetchForecast, fetchCorrelation, fetchSimilarity,
     fetchTitleSankey, fetchGenderAnalysis, fetchTitleTransition,
-    fetchRetention, fetchDeptForecast
+    fetchDeptStability, fetchDeptForecast
 } from './api.js';
 
 import { renderPCA, renderRadar, renderSilhouette, renderClusterCmp, renderCluster3D } from './charts/clusterCharts.js';
@@ -24,7 +24,8 @@ import {
     renderCorrelation as _renderCorrelation,
     renderSimilarity as _renderSimilarity,
     renderDeptPie, renderDeptBar, renderRegression, renderSankey,
-    renderGenderRatio, renderGenderPay, renderTransition, renderRetention
+    renderGenderRatio, renderGenderPay, renderTransition,
+    renderDeptStabilityChart
 } from './charts/hrCharts.js';
 
 const { createApp, ref, onMounted, onUnmounted, watch } = Vue;
@@ -95,19 +96,19 @@ createApp({
         const fetchAll = async () => {
 
             const [kpiD, deptD, clusterD, historyD, forecastD, corrD, simD, sankeyD,
-                distD, genderD, transD, evolD, benchD, retD, deptFcD, growthD] =
+                distD, genderD, transD, evolD, benchD, deptStabD, deptFcD, growthD] =
                 await Promise.all([
                     fetchKPI(), fetchDeptDistribution(), fetchClustering(),
                     fetchSalaryHistory(), fetchForecast(), fetchCorrelation(),
                     fetchSimilarity(), fetchTitleSankey(), fetchSalaryDistribution(),
                     fetchGenderAnalysis(), fetchTitleTransition(), fetchSalaryEvolution(),
-                    fetchExternalBenchmark(), fetchRetention(),
+                    fetchExternalBenchmark(), fetchDeptStability(),
                     fetchDeptForecast(), fetchSalaryGrowth()
                 ]);
 
             cache = { dept: deptD, cluster: clusterD, history: historyD, forecast: forecastD,
                       corr: corrD, sim: simD, sankey: sankeyD, dist: distD, gender: genderD,
-                      trans: transD, evol: evolD, bench: benchD, ret: retD,
+                      trans: transD, evol: evolD, bench: benchD, deptStability: deptStabD,
                       deptFc: deptFcD, growth: growthD };
 
             const safeRender = (name, fn, ...args) => {
@@ -129,7 +130,7 @@ createApp({
             if (transD) safeRender('Transition', renderTransition, transD);
             if (evolD) safeRender('Evolution', renderEvolution, evolD);
             if (benchD) safeRender('Benchmark', renderBenchmark, benchD);
-            if (retD) safeRender('Retention', renderRetention, retD);
+            if (deptStabD) safeRender('DeptStability', renderDeptStabilityChart, 'c_dept_stability', deptStabD);
             if (deptFcD) { deptForecastList.value = deptFcD.comparison?.map(d => d.dept_name) || []; safeRender('DeptForecast', _renderDeptForecast, deptFcD, deptForecastSel); }
             if (growthD) safeRender('Growth', _renderGrowth, growthD, growthView);
         };

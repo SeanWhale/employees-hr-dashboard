@@ -65,18 +65,25 @@ def get_similarity_data():
 
 
 def get_sankey_data():
-    """桑基图 — 职级流动拓扑关系"""
+    """桑基图 — 入职首岗 → 最终/当前岗位 流动路径"""
     con = get_connection()
     t_path = get_parquet_path("load_titles.parquet")
     return con.execute(f"""
-        WITH ordered_titles AS (
-            SELECT emp_no, title,
-                   LEAD(title) OVER (PARTITION BY emp_no ORDER BY from_date) AS next_title
+        WITH RankedTitles AS (
+            SELECT emp_no,
+                   FIRST_VALUE(title) OVER w AS first_title,
+                   LAST_VALUE(title) OVER w AS last_title
             FROM read_parquet('{t_path}')
+            WINDOW w AS (PARTITION BY emp_no ORDER BY from_date ASC ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING)
+        ),
+        DistinctPaths AS (
+            SELECT DISTINCT emp_no, first_title, last_title FROM RankedTitles
         )
-        SELECT title AS source, next_title AS target, COUNT(*) AS value
-        FROM ordered_titles
-        WHERE next_title IS NOT NULL AND title != next_title
+        SELECT
+            first_title || ' (入职)' AS source,
+            last_title || ' (最终)' AS target,
+            COUNT(*) AS value
+        FROM DistinctPaths
         GROUP BY source, target
     """).df()
 
@@ -142,7 +149,7 @@ def get_title_transition_data():
 
 
 def get_retention_data():
-    """留任度分析 — 5000 抽样员工的部门/职级变更次数"""
+    """留任度分析 — 5000 条抽样员工的部门/职级变更次数"""
     con = get_connection()
     de_path = get_parquet_path("load_dept_emp.parquet")
     t_path = get_parquet_path("load_titles.parquet")
@@ -170,6 +177,70 @@ def get_retention_data():
         FROM sampled_cur sc
         LEFT JOIN dc ON sc.emp_no = dc.emp_no
         LEFT JOIN tc ON sc.emp_no = tc.emp_no
+    """).df()
+
+
+def get_stability_by_dept():
+    """部门稳定性构成 — 以最后薪资记录 to_date 判定离职状态，而非 dept_emp.to_date
+    兼容 Pandas Timestamp 上限（2262年）：9999/2099-01-01 可能被转为 NULL/NaT"""
+    con = get_connection()
+    t_path = get_parquet_path("load_titles.parquet")
+    de_path = get_parquet_path("load_dept_emp.parquet")
+    d_path = get_parquet_path("load_departments.parquet")
+    s_path = get_parquet_path("load_salaries*.parquet")
+    return con.execute(f"""
+        WITH EmpTitles AS (
+            SELECT emp_no, COUNT(DISTINCT title) AS title_cnt
+            FROM read_parquet('{t_path}')
+            GROUP BY emp_no
+        ),
+        EmpLatestDept AS (
+            SELECT emp_no, dept_no
+            FROM (
+                SELECT emp_no, dept_no,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY emp_no
+                           ORDER BY to_date DESC NULLS FIRST
+                       ) AS rn
+                FROM read_parquet('{de_path}')
+            ) sub
+            WHERE rn = 1
+        ),
+        EmpLatestSalary AS (
+            SELECT emp_no, to_date
+            FROM (
+                SELECT emp_no, to_date,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY emp_no
+                           ORDER BY to_date DESC NULLS FIRST
+                       ) AS rn
+                FROM read_parquet('{s_path}')
+            ) sub
+            WHERE rn = 1
+        ),
+        labeled AS (
+            SELECT
+                eld.emp_no,
+                d.dept_name,
+                CASE
+                    WHEN CAST(els.to_date AS VARCHAR) NOT LIKE '9999%'
+                     AND CAST(els.to_date AS VARCHAR) NOT LIKE '2099%'
+                     AND els.to_date IS NOT NULL
+                        THEN '已离职'
+                    WHEN COALESCE(et.title_cnt, 0) <= 1
+                        THEN '在职-稳定未调岗'
+                    ELSE '在职-内部流动/晋升'
+                END AS stability_label
+            FROM EmpLatestDept eld
+            JOIN read_parquet('{d_path}') d ON eld.dept_no = d.dept_no
+            JOIN EmpTitles et ON eld.emp_no = et.emp_no
+            JOIN EmpLatestSalary els ON eld.emp_no = els.emp_no
+        )
+        SELECT dept_name, stability_label, COUNT(DISTINCT emp_no) AS cnt
+        FROM labeled
+        WHERE stability_label IS NOT NULL
+        GROUP BY dept_name, stability_label
+        ORDER BY dept_name, stability_label
     """).df()
 
 

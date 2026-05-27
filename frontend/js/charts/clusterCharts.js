@@ -4,6 +4,14 @@
  */
 import { initChart, COLORS, fmt } from '../utils.js';
 
+// 固定聚类颜色映射 — 无论数据如何过滤，同一聚类标签颜色永远不变
+const CLUSTER_COLOR_MAP = {
+    '核心高薪层': '#e74c3c',
+    '中坚平稳层': '#00bcd4',
+    '年轻潜力层': '#2ecc71',
+    '基层起步层': '#f1c40f'
+};
+
 // --- PCA 降维散点 (Req 2) ---
 export function renderPCA(data, { selectedEmp, showModal }) {
     const c = initChart('c_pca');
@@ -16,7 +24,6 @@ export function renderPCA(data, { selectedEmp, showModal }) {
         groups[cn].push([x[i], y[i], salary[i], dept[i], cluster[i], tenure[i], age[i], cluster_name[i]]);
     });
     c.setOption({
-        color: COLORS,
         tooltip: {
             trigger: 'item',
             formatter: (p) => {
@@ -36,6 +43,7 @@ export function renderPCA(data, { selectedEmp, showModal }) {
         yAxis: { name: `综合人口维度 (年龄/工龄) - PC2 (${(data.pca.explained_variance[1]*100).toFixed(0)}%)`, nameLocation: 'center', nameGap: 45, axisLabel: { color: '#a0aec0' }, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } } },
         series: Object.entries(groups).map(([name, pts]) => ({
             name, type: 'scatter', data: pts, symbolSize: 7,
+            itemStyle: { color: CLUSTER_COLOR_MAP[name] || '#cccccc' },
             emphasis: { scale: 2 }
         }))
     });
@@ -59,8 +67,15 @@ export function renderPCA(data, { selectedEmp, showModal }) {
 export function renderRadar(data) {
     const c = initChart('c_radar');
     if (!c || !data.radar) return;
+
+    // 固定聚类顺序，保证颜色与 2D/3D 散点图严格一致
+    const CLUSTER_ORDER = ['核心高薪层', '中坚平稳层', '年轻潜力层', '基层起步层'];
+    const sorted = [...data.radar].sort((a, b) =>
+        CLUSTER_ORDER.indexOf(a.cluster_name) - CLUSTER_ORDER.indexOf(b.cluster_name)
+    );
+
     c.setOption({
-        color: COLORS,
+        color: sorted.map(d => CLUSTER_COLOR_MAP[d.cluster_name] || '#cccccc'),
         legend: { bottom: 0, textStyle: { color: '#a0aec0', fontSize: 10 }, itemWidth: 8 },
         radar: {
             indicator: [
@@ -68,9 +83,11 @@ export function renderRadar(data) {
                 { name: '司龄(年)', max: Math.max(...data.radar.map(d => d.tenure)) * 1.2 },
                 { name: '年龄(岁)', max: Math.max(...data.radar.map(d => d.age)) * 1.05 }
             ],
-            center: ['50%', '45%'], radius: '55%'
+            center: ['50%', '45%'], radius: '55%',
+            axisLine: { show: false },
+            splitLine: { lineStyle: { color: 'rgba(255, 255, 255, 0.1)' } }
         },
-        series: [{ type: 'radar', data: data.radar.map(d => ({ value: [d.salary, d.tenure, d.age], name: d.cluster_name })) }]
+        series: [{ type: 'radar', data: sorted.map(d => ({ value: [d.salary, d.tenure, d.age], name: d.cluster_name })) }]
     });
 }
 
@@ -117,29 +134,15 @@ export function renderClusterCmp(data) {
 }
 
 // --- 3D 人才聚类散点 (工龄-薪资-部门) ---
-export function renderCluster3D(domId, data) {
-    const dom = document.getElementById(domId);
-    if (!dom) { console.error('[Cluster3D] DOM not found:', domId); return; }
 
-    const existing = echarts.getInstanceByDom(dom);
-    if (existing) existing.dispose();
-    const c = echarts.init(dom);
-    if (!c) { console.error('[Cluster3D] init failed'); return; }
+// 模块级缓存，用于部门筛选保持原始数据不丢失
+let _cluster3DRaw = null;
+let _cluster3DChart = null;
+let _cluster3DDeptLabels = [];
 
-    const handler = () => c.resize();
-    window.addEventListener('resize', handler);
-
-    if (!data.points_3d || !data.points_3d.length) {
-        console.warn('[Cluster3D] No points_3d data');
-        return;
-    }
-
-    const deptLabels = ["Development", "Sales", "Marketing", "Finance",
-        "Human Resources", "Production", "Quality Management",
-        "Research", "Customer Service"];
-
+function _renderCluster3DChart(c, points, deptLabels) {
     const groups = {};
-    data.points_3d.forEach(([tenure, salary, deptIdx, deptName, clusterName]) => {
+    points.forEach(([tenure, salary, deptIdx, deptName, clusterName]) => {
         const key = clusterName || '未分类';
         if (!groups[key]) groups[key] = [];
         groups[key].push({
@@ -202,13 +205,59 @@ export function renderCluster3D(domId, data) {
             nameTextStyle: { color: '#a0aec0' },
             axisLine: { lineStyle: { color: '#00f2fe' } }
         },
-        series: clusterNames.map((name, i) => ({
+        series: clusterNames.map((name) => ({
             name,
             type: 'scatter3D',
             data: groups[name],
             symbolSize: 6,
-            itemStyle: { color: COLORS[i % COLORS.length] },
-            emphasis: { itemStyle: { color: COLORS[i % COLORS.length] }, scale: 1.5 }
+            itemStyle: { color: CLUSTER_COLOR_MAP[name] || '#cccccc' },
+            emphasis: { itemStyle: { color: CLUSTER_COLOR_MAP[name] || '#cccccc' }, scale: 1.5 }
         }))
     });
+}
+
+export function renderCluster3D(domId, data) {
+    const dom = document.getElementById(domId);
+    if (!dom) { console.error('[Cluster3D] DOM not found:', domId); return; }
+
+    const existing = echarts.getInstanceByDom(dom);
+    if (existing) existing.dispose();
+    const c = echarts.init(dom);
+    if (!c) { console.error('[Cluster3D] init failed'); return; }
+
+    const handler = () => c.resize();
+    window.addEventListener('resize', handler);
+
+    if (!data.points_3d || !data.points_3d.length) {
+        console.warn('[Cluster3D] No points_3d data');
+        return;
+    }
+
+    // 缓存原始全量数据
+    _cluster3DRaw = data.points_3d;
+    _cluster3DChart = c;
+    _cluster3DDeptLabels = [...new Set(data.points_3d.map(p => p[3]).filter(Boolean))].sort();
+
+    // 动态构建部门筛选下拉选项
+    const select = document.getElementById('deptFilterSelect');
+    if (select) {
+        while (select.options.length > 1) select.remove(1);
+        _cluster3DDeptLabels.forEach(dept => {
+            const opt = document.createElement('option');
+            opt.value = dept;
+            opt.textContent = dept;
+            select.appendChild(opt);
+        });
+        select.onchange = () => {
+            if (!_cluster3DRaw) return;
+            const val = select.value;
+            const filtered = val === 'all'
+                ? _cluster3DRaw
+                : _cluster3DRaw.filter(p => p[3] === val);
+            // Z 轴始终使用全量部门标签，保证筛选时坐标比例不变
+            _renderCluster3DChart(c, filtered, _cluster3DDeptLabels);
+        };
+    }
+
+    _renderCluster3DChart(c, data.points_3d, _cluster3DDeptLabels);
 }

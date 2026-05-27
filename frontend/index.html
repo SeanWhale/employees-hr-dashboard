@@ -17,7 +17,7 @@
 <div id="app" v-cloak>
     <!-- ========== 头部 ========== -->
     <header class="header">
-        <h1 style="position: relative; top: 30px; left:97px;">Enterprise HR Insights — 企业人力资本全局指挥舱</h1>
+        <h1>Enterprise HR Insights — 企业人力资本全局指挥舱</h1>
         <div style="display:flex;align-items:center;gap:20px;">
             <input v-model="searchText" @input="onSearch" placeholder="搜索部门/职级/群体..."
                    style="background:rgba(16,30,54,0.9);color:#e2e8f0;border:1px solid rgba(0,242,254,0.3);border-radius:6px;padding:6px 14px;width:220px;font-size:14px;outline:none;">
@@ -84,6 +84,12 @@
             </div>
             <div class="chart-wrapper main-box">
                 <h3 class="chart-title">3D 人才聚类 — 工龄·薪资·部门 (裸眼 3D 自转)</h3>
+                <div class="chart-filter-bar">
+                    <label for="deptFilterSelect">部门筛选</label>
+                    <select id="deptFilterSelect">
+                        <option value="all">全公司 (所有部门)</option>
+                    </select>
+                </div>
                 <div id="c_cluster_3d" class="echart-box" style="height:400px;"></div>
             </div>
         </section>
@@ -192,11 +198,11 @@
             </div>
         </section>
 
-        <!-- ========== Row 10: 留任分析 ========== -->
+        <!-- ========== Row 10: 部门稳定性堆叠柱状图 ========== -->
         <section class="charts-panel">
-            <div class="chart-wrapper">
-                <h3 class="chart-title">员工留任/稳定性分类</h3>
-                <div id="c_retention" class="echart-box"></div>
+            <div class="chart-wrapper" style="flex:1;">
+                <h3 class="chart-title">各部门员工稳定性构成 — 堆叠柱状图</h3>
+                <div id="c_dept_stability" class="echart-box"></div>
             </div>
         </section>
 

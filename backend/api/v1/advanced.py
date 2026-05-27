@@ -5,12 +5,14 @@ from fastapi import APIRouter
 
 try:
     from services.advanced_srv import (get_clustering, get_correlation, get_dept_forecast,
-                                        get_forecast, get_gender_analysis, get_retention,
-                                        get_similarity, get_title_sankey, get_title_transition)
+                                        get_dept_stability, get_forecast, get_gender_analysis,
+                                        get_retention, get_similarity, get_title_sankey,
+                                        get_title_transition)
 except ImportError:
     from backend.services.advanced_srv import (get_clustering, get_correlation, get_dept_forecast,
-                                                get_forecast, get_gender_analysis, get_retention,
-                                                get_similarity, get_title_sankey, get_title_transition)
+                                                get_dept_stability, get_forecast, get_gender_analysis,
+                                                get_retention, get_similarity, get_title_sankey,
+                                                get_title_transition)
 
 router = APIRouter(prefix="/advanced", tags=["advanced"])
 
@@ -58,3 +60,8 @@ def api_retention():
 @router.get("/dept_forecast")
 def api_dept_forecast():
     return get_dept_forecast()
+
+
+@router.get("/department-stability")
+def api_dept_stability():
+    return get_dept_stability()

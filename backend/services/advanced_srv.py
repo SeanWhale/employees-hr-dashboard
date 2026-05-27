@@ -12,13 +12,15 @@ try:
                                     get_dept_forecast_data, get_forecast_data,
                                     get_gender_dept_data, get_gender_promo_data,
                                     get_retention_data, get_sankey_data,
-                                    get_similarity_data, get_title_transition_data)
+                                    get_similarity_data, get_stability_by_dept,
+                                    get_title_transition_data)
 except ImportError:
     from backend.dao.advanced_dao import (get_clustering_data, get_correlation_data,
                                             get_dept_forecast_data, get_forecast_data,
                                             get_gender_dept_data, get_gender_promo_data,
                                             get_retention_data, get_sankey_data,
-                                            get_similarity_data, get_title_transition_data)
+                                            get_similarity_data, get_stability_by_dept,
+                                            get_title_transition_data)
 
 try:
     from ml.clustering import (build_label_map, compute_radar, compute_silhouette_scores,
@@ -210,36 +212,7 @@ def get_title_sankey():
     if df.empty:
         return {"nodes": [], "links": []}
 
-    # Step 1: 消除直接双向环路 — 每对 source/target 只保留流量更大的方向
-    df['pair_key'] = df.apply(lambda r: tuple(sorted([r['source'], r['target']])), axis=1)
-    df = df.loc[df.groupby('pair_key')['value'].idxmax()].drop(columns=['pair_key'])
-
-    # Step 2: 确保整体 DAG — 按流量降序贪心建图，跳过会形成多跳环路的边
-    edges = df.sort_values('value', ascending=False)
-    adj = {}
-    dag_rows = []
-
-    def _creates_cycle(src, tgt):
-        """BFS 从 tgt 出发，检查能否回到 src"""
-        visited = set()
-        stack = [tgt]
-        while stack:
-            node = stack.pop()
-            if node == src:
-                return True
-            if node not in visited:
-                visited.add(node)
-                stack.extend(adj.get(node, []))
-        return False
-
-    for _, r in edges.iterrows():
-        s, t = r['source'], r['target']
-        if not _creates_cycle(s, t):
-            adj.setdefault(s, []).append(t)
-            dag_rows.append(r.to_dict())
-
-    df = pd.DataFrame(dag_rows)
-
+    # 入职 → 最终：天然有向无环，无需消环/DAG 贪心
     all_titles = pd.unique(df[["source", "target"]].values.ravel("K"))
     nodes = [{"name": str(t)} for t in all_titles]
     links = df.to_dict(orient="records")
@@ -360,7 +333,30 @@ def get_retention():
 
 
 # ============================================================
-#  16. 分部门预测
+#  16. 部门稳定性构成
+# ============================================================
+def get_dept_stability():
+    df = get_stability_by_dept()
+
+    if df.empty:
+        return {"departments": [], "datasets": {}}
+
+    departments = sorted(df['dept_name'].unique().tolist())
+
+    label_order = ['已离职', '在职-稳定未调岗', '在职-内部流动/晋升']
+    datasets = {label: [] for label in label_order}
+
+    for dept in departments:
+        dept_data = df[df['dept_name'] == dept]
+        for label in label_order:
+            row = dept_data[dept_data['stability_label'] == label]
+            datasets[label].append(int(row['cnt'].values[0]) if len(row) > 0 else 0)
+
+    return {"departments": departments, "datasets": datasets}
+
+
+# ============================================================
+#  17. 分部门预测
 # ============================================================
 def get_dept_forecast():
     df = get_dept_forecast_data()
