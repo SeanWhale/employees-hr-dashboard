@@ -158,11 +158,31 @@ createApp({
         };
 
         // ---- 生命周期 ----
+        // ---- 滚动监听：更新右侧导航点 ----
+        const setupScrollSpy = () => {
+            const sections = document.querySelectorAll('.chapter-section');
+            const dots = document.querySelectorAll('.nav-dot');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const index = Array.from(sections).indexOf(entry.target);
+                        dots.forEach(d => d.classList.remove('active'));
+                        if (dots[index]) dots[index].classList.add('active');
+                    }
+                });
+            }, { threshold: 0.2 }); // 屏幕露出 20% 时激活
+            sections.forEach(sec => observer.observe(sec));
+        };
+
+        // ---- 生命周期 ----
         onMounted(() => {
             updateTime();
             timer = setInterval(updateTime, 1000);
             document.addEventListener('keydown', onKeydown);
-            fetchAll();
+            fetchAll().then(() => {
+                // 等 DOM 和图表加载完后，初始化滚动监听
+                setTimeout(setupScrollSpy, 500); 
+            });
         });
 
         onUnmounted(() => {
